@@ -2654,12 +2654,12 @@ inline void BattlescapeState::handle(Action *action)
 					if (key == SDLK_d && ctrlPressed)
 					{
 						_save->setDebugMode();
-						debug("Debug Mode");
+						_txtDebug->setText(tr("STR_DEBUGMODE"));
 					}
 					// "ctrl-v" - reset tile visibility
 					else if (_save->getDebugMode() && key == SDLK_v && ctrlPressed)
 					{
-						debug("Resetting tile visibility");
+						_txtDebug->setText(tr("STR_COMMAND_SHOWMAP"));
 						_save->resetTiles();
 					}
 					else if (_save->getDebugMode() && (key == SDLK_k || key == SDLK_j) && ctrlPressed)
@@ -2681,7 +2681,7 @@ inline void BattlescapeState::handle(Action *action)
 							// kill (ctrl-shift-k) or stun (ctrl-shift-j) just a single unit (under the cursor)
 							if (unitUnderTheCursor && !unitUnderTheCursor->isOut())
 							{
-								debug("Bingo!");
+								_txtDebug->setText(tr("STR_COMMAND_STUN_KILL_ONE")); //Target neutralized!
 								unitUnderTheCursor->damage(Position(0, 0, 0), 1000, _game->getMod()->getDamageType(stunOnly ? DT_STUN : DT_AP), _save, {});
 							}
 						}
@@ -2690,12 +2690,12 @@ inline void BattlescapeState::handle(Action *action)
 							if (stunOnly)
 							{
 								// "ctrl-j" - stun all aliens
-								debug("Deploying Celine Dion album");
+								_txtDebug->setText(tr("STR_COMMAND_STUNALL")); //Somnolescent amnestic dispersed
 							}
 							else
 							{
 								// "ctrl-k" - kill all aliens
-								debug("Influenza bacterium dispersed");
+								_txtDebug->setText(tr("STR_COMMAND_KILLALL")); //Hazardous memetic agent activated
 							}
 							for (std::vector<BattleUnit*>::iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
 							{
@@ -2723,7 +2723,7 @@ inline void BattlescapeState::handle(Action *action)
 							_map->getSelectorPosition(&newPos);
 							if (_save->getBattleGame()->getTileEngine()->isPositionValidForUnit(newPos, unit))
 							{
-								debug("Beam me up Scotty");
+								_txtDebug->setText(tr("STR_COMMAND_TELEPORT_UNIT")); //Moved to [REDACTED]
 								_save->getPathfinding()->removePreview();
 
 								unit->setTile(_save->getTile(newPos), _save);
