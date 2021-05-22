@@ -20,6 +20,7 @@
 #include "ExtendedGeoscapeLinksState.h"
 #include "FundingState.h"
 #include "GeoscapeState.h"
+#include "SummaryState.h"
 #include "../Engine/Game.h"
 #include "../Engine/Action.h"
 #include "../Engine/Options.h"
@@ -42,7 +43,7 @@ ExtendedGeoscapeLinksState::ExtendedGeoscapeLinksState(GeoscapeState* parent) : 
 	_screen = false;
 
 	// Create objects
-	_window = new Window(this, 256, 180, 32, 10, POPUP_BOTH);
+	_window = new Window(this, 256, 194, 32, 10, POPUP_BOTH);
 	_txtTitle = new Text(220, 17, 50, 33);
 	if (Options::oxceFatFingerLinks)
 	{
@@ -55,7 +56,8 @@ ExtendedGeoscapeLinksState::ExtendedGeoscapeLinksState(GeoscapeState* parent) : 
 		_btnNotes = new TextButton(116, 25, 44, 128);
 		_btnMusic = new TextButton(116, 25, 161, 128);
 		_btnTest = new TextButton(116, 25, 44, 154);
-		_btnOk = new TextButton(116, 25, 161, 154);
+		_btnSummary = new TextButton(116, 25, 161, 154);
+		_btnOk = new TextButton(116, 25, 44, 180);
 	}
 	else
 	{
@@ -68,7 +70,8 @@ ExtendedGeoscapeLinksState::ExtendedGeoscapeLinksState(GeoscapeState* parent) : 
 		_btnNotes = new TextButton(220, 12, 50, 128);
 		_btnMusic = new TextButton(220, 12, 50, 141);
 		_btnTest = new TextButton(220, 12, 50, 154);
-		_btnOk = new TextButton(220, 12, 50, 167);
+		_btnSummary = new TextButton(220, 12, 50, 167);
+		_btnOk = new TextButton(220, 12, 50, 180);
 	}
 
 	// Set palette
@@ -87,6 +90,7 @@ ExtendedGeoscapeLinksState::ExtendedGeoscapeLinksState(GeoscapeState* parent) : 
 	add(_btnNotes, "button", "oxceLinks");
 	add(_btnMusic, "button", "oxceLinks");
 	add(_btnTest, "button", "oxceLinks");
+	add(_btnSummary, "button", "oxceLinks");
 
 	centerAllSurfaces();
 
@@ -100,6 +104,9 @@ ExtendedGeoscapeLinksState::ExtendedGeoscapeLinksState(GeoscapeState* parent) : 
 	_btnOk->setText(tr("STR_OK"));
 	_btnOk->onMouseClick((ActionHandler)&ExtendedGeoscapeLinksState::btnOkClick);
 	_btnOk->onKeyboardPress((ActionHandler)&ExtendedGeoscapeLinksState::btnOkClick, Options::keyCancel);
+
+	_btnSummary->setText(tr("STR_SUMMARY_GEOSCAPE"));
+	_btnSummary->onMouseClick((ActionHandler)&ExtendedGeoscapeLinksState::btnSummaryClick);
 
 	_btnFunding->setText(tr("STR_FUNDING_UC"));
 	_btnFunding->onMouseClick((ActionHandler)&ExtendedGeoscapeLinksState::btnFundingClick);
@@ -179,6 +186,12 @@ void ExtendedGeoscapeLinksState::btnNotesClick(Action *)
 {
 	_game->popState();
 	_game->pushState(new NotesState(OPT_GEOSCAPE));
+}
+
+void ExtendedGeoscapeLinksState::btnSummaryClick(Action *)
+{
+	_game->popState();
+	_game->pushState(new SummaryState);
 }
 
 void ExtendedGeoscapeLinksState::btnMusicClick(Action *)
