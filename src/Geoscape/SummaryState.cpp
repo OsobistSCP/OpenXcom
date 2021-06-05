@@ -47,13 +47,19 @@ SummaryState::SummaryState()
 	_window = new Window(this, 320, 200, 0, 0, POPUP_BOTH);
 	_btnOk = new TextButton(50, 12, 135, 180);
 	_txtTitle = new Text(320, 17, 0, 8);
+	_txtTension = new Text(100, 9, 7, 30);
+	_txtInfluence = new Text(100, 9, 7, 40);
+	_txtKarma = new Text(100, 9, 7, 50);
 
 	// Set palette
 	setInterface("SWindow");
 
 	add(_window, "window", "SWindow");
-	add(_btnOk, "button", "fundingWindow");
+	add(_btnOk, "button", "SWindow");
 	add(_txtTitle, "text", "SWindow");
+	add(_txtTension, "text", "SWindow");
+	add(_txtInfluence, "text", "SWindow");
+	add(_txtKarma, "text", "SWindow");
 
 	centerAllSurfaces();
 
@@ -69,6 +75,12 @@ SummaryState::SummaryState()
 	_txtTitle->setAlign(ALIGN_CENTER);
 	_txtTitle->setBig();
 	_txtTitle->setText(tr("STR_SUMMARY_GEOSCAPE"));
+
+	_txtTension->setText(tr("STR_TENSION"));
+
+	_txtInfluence->setText(tr("STR_INFLUENCE"));
+
+	_txtKarma->setText(tr("STR_KARMA"));
 
 	
 }

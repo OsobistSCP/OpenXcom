@@ -35,7 +35,7 @@ namespace OpenXcom
 	private:
 		TextButton* _btnOk;
 		Window* _window;
-		Text* _txtTitle;
+		Text* _txtTitle, *_txtTension, *_txtInfluence, *_txtKarma;
 		TextList* _lstCountries;
 	public:
 		/// Creates the Summary state.
