@@ -1124,6 +1124,12 @@
     <ClCompile Include="Battlescape\ExtendedInventoryLinksState.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
+    <ClCompile Include="Geoscape\SummaryState.cpp">
+      <Filter>Geoscape</Filter>
+    </ClCompile>
+    <ClCompile Include="SCP\MasterMind.cpp">
+      <Filter>SCP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -2309,6 +2315,12 @@
     <ClInclude Include="Battlescape\ExtendedInventoryLinksState.h">
       <Filter>Battlescape</Filter>
     </ClInclude>
+    <ClInclude Include="Geoscape\SummaryState.h">
+      <Filter>Geoscape</Filter>
+    </ClInclude>
+    <ClInclude Include="SCP\MasterMind.h">
+      <Filter>SCP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Geoscape">
@@ -2343,6 +2355,9 @@
     </Filter>
     <Filter Include="Mod">
       <UniqueIdentifier>{ea5b1e9f-9ff1-457d-9a15-5af8773ccb50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SCP">
+      <UniqueIdentifier>{28480e97-64f3-4e2f-9901-b39fc61510ce}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

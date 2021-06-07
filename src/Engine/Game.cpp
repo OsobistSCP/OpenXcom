@@ -33,6 +33,7 @@
 #include "../Mod/Mod.h"
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
+#include "../SCP/MasterMind.h"
 #include "Action.h"
 #include "Exception.h"
 #include "Options.h"
@@ -54,7 +55,7 @@ const double Game::VOLUME_GRADIENT = 10.0;
  * creates the display screen and sets up the cursor.
  * @param title Title of the game window.
  */
-Game::Game(const std::string &title) : _screen(0), _cursor(0), _lang(0), _save(0), _mod(0), _quit(false), _init(false), _update(false),  _mouseActive(true), _timeUntilNextFrame(0),
+Game::Game(const std::string &title) : _screen(0), _cursor(0), _lang(0), _save(0), _mod(0), _mind(0), _quit(false), _init(false), _update(false),  _mouseActive(true), _timeUntilNextFrame(0),
 	_ctrl(false), _alt(false), _shift(false), _rmb(false), _mmb(false)
 {
 	Options::reload = false;

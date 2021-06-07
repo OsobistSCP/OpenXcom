@@ -126,6 +126,7 @@
 #include "../Mod/AlienDeployment.h"
 #include "../Mod/RuleInterface.h"
 #include "../Mod/RuleVideo.h"
+#include "../SCP/MasterMind.h"
 #include "../fmath.h"
 #include "../fallthrough.h"
 
@@ -1087,6 +1088,8 @@ void GeoscapeState::time5Seconds()
 		{
 			if ((*j)->isDestroyed())
 			{
+				int score = (*j)->getRules()->getScore();
+				_game->getMasterMind()->updateLoyalty(-score);
 				for (std::vector<Country*>::iterator country = _game->getSavedGame()->getCountries()->begin(); country != _game->getSavedGame()->getCountries()->end(); ++country)
 				{
 					if ((*country)->getRules()->insideCountry((*j)->getLongitude(), (*j)->getLatitude()))
@@ -1748,6 +1751,11 @@ bool GeoscapeState::processMissionSite(MissionSite *site)
 
 	int score = removeSite ? site->getDeployment()->getDespawnPenalty() : site->getDeployment()->getPoints();
 
+	if (score)
+	{
+		_game->getMasterMind()->updateLoyalty(score, ALIEN_MISSION_DESPAWN);
+	}
+
 	Region *region = _game->getSavedGame()->locateRegion(*site);
 	if (region)
 	{
@@ -1938,6 +1946,10 @@ void GeoscapeState::time30Minutes()
 					}
 				}
 			}
+			if (ufo->getDetected())
+			{
+				_game->getMasterMind()->updateLoyalty(points, ALIEN_UFO_ACTIVITY);
+			}
 
 			break;
 		case Ufo::CRASHED:
@@ -1999,6 +2011,7 @@ void GeoscapeState::time1Hour()
 	{
 		for (std::vector<Craft*>::iterator j = (*i)->getCrafts()->begin(); j != (*i)->getCrafts()->end(); ++j)
 		{
+			int bonus = _game->getMasterMind()->getLoyaltyPerformanceBonus();
 			if ((*j)->getStatus() == "STR_REPAIRS")
 			{
 				(*j)->repair();
@@ -2046,6 +2059,7 @@ void GeoscapeState::time1Hour()
 		std::map<Production*, productionProgress_e> toRemove;
 		for (std::vector<Production*>::const_iterator j = (*i)->getProductions().begin(); j != (*i)->getProductions().end(); ++j)
 		{
+			int bonus = _game->getMasterMind()->getLoyaltyPerformanceBonus();
 			toRemove[(*j)] = (*j)->step((*i), _game->getSavedGame(), _game->getMod(), _game->getLanguage());
 		}
 		for (std::map<Production*, productionProgress_e>::iterator j = toRemove.begin(); j != toRemove.end(); ++j)
@@ -2251,6 +2265,7 @@ void GeoscapeState::time1Day()
 		std::vector<ResearchProject*> finished;
 		for (ResearchProject *project : base->getResearch())
 		{
+			int bonus = _game->getMasterMind()->getLoyaltyPerformanceBonus();
 			if (project->step())
 			{
 				finished.push_back(project);
@@ -2323,9 +2338,12 @@ void GeoscapeState::time1Day()
 			}
 			// 3e. handle core research (topic+lookup)
 			saveGame->addFinishedResearch(research, mod, base);
+			_game->getMasterMind()->updateLoyalty(research->getPoints(), XCOM_RESEARCH);
 			if (!research->getLookup().empty())
 			{
-				saveGame->addFinishedResearch(mod->getResearch(research->getLookup(), true), mod, base);
+				auto lookup = mod->getResearch(research->getLookup(), true);
+				saveGame->addFinishedResearch(lookup, mod, base);
+				_game->getMasterMind()->updateLoyalty(lookup->getPoints(), XCOM_RESEARCH);
 			}
 			// 3e. handle cutscene
 			if (!research->getCutscene().empty())
@@ -2557,6 +2575,7 @@ void GeoscapeState::time1Day()
 	// handle regional and country points for alien bases
 	for (std::vector<AlienBase*>::const_iterator b = saveGame->getAlienBases()->begin(); b != saveGame->getAlienBases()->end(); ++b)
 	{
+		int points = (*b)->getDeployment()->getPoints();
 		for (std::vector<Region*>::iterator k = saveGame->getRegions()->begin(); k != saveGame->getRegions()->end(); ++k)
 		{
 			if ((*k)->getRules()->insideRegion((*b)->getLongitude(), (*b)->getLatitude()))
@@ -2572,6 +2591,10 @@ void GeoscapeState::time1Day()
 				(*k)->addActivityAlien((*b)->getDeployment()->getPoints());
 				break;
 			}
+		}
+		if ((*b)->isDiscovered())
+		{
+			_game->getMasterMind()->updateLoyalty(points, ALIEN_BASE);
 		}
 	}
 
@@ -3324,6 +3347,7 @@ void GeoscapeState::determineAlienMissions()
 	SavedGame *save = _game->getSavedGame();
 	AlienStrategy &strategy = save->getAlienStrategy();
 	Mod *mod = _game->getMod();
+	int loyalty = save->getLoyalty();
 	int month = _game->getSavedGame()->getMonthsPassed();
 	int currentScore = save->getCurrentScore(month); // _monthsPassed was already increased by 1
 	int performanceBonus = currentScore * mod->getPerformanceBonusFactor();
@@ -3351,6 +3375,8 @@ void GeoscapeState::determineAlienMissions()
 				// and make sure we satisfy the difficulty restrictions
 				(month < 1 || arcScript->getMinScore() <= currentScore) &&
 				(month < 1 || arcScript->getMaxScore() >= currentScore) &&
+				(month < 1 || arcScript->getMinLoyalty() <= loyalty) &&
+				(month < 1 || arcScript->getMaxLoyalty() >= loyalty) &&
 				(month < 1 || arcScript->getMinFunds() <= currentFunds) &&
 				(month < 1 || arcScript->getMaxFunds() >= currentFunds) &&
 				arcScript->getMinDifficulty() <= save->getDifficulty() &&
@@ -3477,6 +3503,8 @@ void GeoscapeState::determineAlienMissions()
 			// and make sure we satisfy the difficulty restrictions
 			(month < 1 || command->getMinScore() <= currentScore) &&
 			(month < 1 || command->getMaxScore() >= currentScore) &&
+			(month < 1 || command->getMinLoyalty() <= loyalty) &&
+			(month < 1 || command->getMaxLoyalty() >= loyalty) &&
 			(month < 1 || command->getMinFunds() <= currentFunds) &&
 			(month < 1 || command->getMaxFunds() >= currentFunds) &&
 			command->getMinDifficulty() <= save->getDifficulty())

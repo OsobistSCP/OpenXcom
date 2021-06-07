@@ -156,6 +156,7 @@ private:
 	std::vector<GeoscapeEvent*> _geoscapeEvents;
 	bool _debug, _warned;
 	int _monthsPassed;
+	int _loyalty, _lastMonthsLoyalty;
 	std::string _graphRegionToggles;
 	std::string _graphCountryToggles;
 	std::string _graphFinanceToggles;
@@ -216,6 +217,14 @@ public:
 	std::vector<int64_t> &getFundsList();
 	/// Sets new funds.
 	void setFunds(int64_t funds);
+	/// Gets the current loyalty score.
+	int getLoyalty() const { return _loyalty; };
+	/// Sets the new loyalty score.
+	void setLoyalty(int loyalty) { _loyalty = loyalty; };
+	/// Gets the last month loyalty score.
+	int getLastMonthsLoyalty() const { return _lastMonthsLoyalty; };
+	/// Sets the new last month loyalty score.
+	void setLastMonthsLoyalty(int loyalty) { _lastMonthsLoyalty = loyalty; };
 	/// Gets the current globe longitude.
 	double getGlobeLongitude() const;
 	/// Sets the new globe longitude.

@@ -424,7 +424,7 @@
     <ClCompile Include="Geoscape\MultipleTargetsState.cpp" />
     <ClCompile Include="Geoscape\SelectDestinationState.cpp" />
     <ClCompile Include="Geoscape\SelectMusicTrackState.cpp" />
-	<ClCompile Include="Geoscape\SummaryState.cpp" />
+    <ClCompile Include="Geoscape\SummaryState.cpp" />
     <ClCompile Include="Geoscape\TargetInfoState.cpp" />
     <ClCompile Include="Geoscape\TrainingFinishedState.cpp" />
     <ClCompile Include="Geoscape\TrainingState.cpp" />
@@ -580,6 +580,7 @@
     <ClCompile Include="Savegame\Vehicle.cpp" />
     <ClCompile Include="Savegame\Waypoint.cpp" />
     <ClCompile Include="Savegame\WeightedOptions.cpp" />
+    <ClCompile Include="SCP\MasterMind.cpp" />
     <ClCompile Include="Ufopaedia\ArticleState.cpp" />
     <ClCompile Include="Ufopaedia\ArticleStateArmor.cpp" />
     <ClCompile Include="Ufopaedia\ArticleStateBaseFacility.cpp" />
@@ -819,7 +820,7 @@
     <ClInclude Include="Geoscape\ResearchCompleteState.h" />
     <ClInclude Include="Geoscape\SelectDestinationState.h" />
     <ClInclude Include="Geoscape\SelectMusicTrackState.h" />
-	<ClInclude Include="Geoscape\SummaryState.h" />
+    <ClInclude Include="Geoscape\SummaryState.h" />
     <ClInclude Include="Geoscape\TargetInfoState.h" />
     <ClInclude Include="Geoscape\TrainingFinishedState.h" />
     <ClInclude Include="Geoscape\TrainingState.h" />
@@ -979,6 +980,7 @@
     <ClInclude Include="Savegame\Vehicle.h" />
     <ClInclude Include="Savegame\Waypoint.h" />
     <ClInclude Include="Savegame\WeightedOptions.h" />
+    <ClInclude Include="SCP\MasterMind.h" />
     <ClInclude Include="Ufopaedia\ArticleState.h" />
     <ClInclude Include="Ufopaedia\ArticleStateArmor.h" />
     <ClInclude Include="Ufopaedia\ArticleStateBaseFacility.h" />

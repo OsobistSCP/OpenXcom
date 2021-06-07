@@ -71,6 +71,7 @@
 #include "../Mod/RuleInterface.h"
 #include "../Savegame/MissionStatistics.h"
 #include "../Savegame/BattleUnitStatistics.h"
+#include "../SCP/MasterMind.h"
 #include "../fallthrough.h"
 
 namespace OpenXcom
@@ -514,6 +515,9 @@ void DebriefingState::init()
 	{
 		_country->addActivityXcom(total);
 	}
+
+	// update SCP Tension
+	_game->getMasterMind()->updateLoyalty(total, XCOM_BATTLESCAPE);
 
 	// Resize (if needed)
 	if (statsY > 80) statsY = 80;

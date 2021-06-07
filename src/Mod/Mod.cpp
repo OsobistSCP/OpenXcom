@@ -2660,6 +2660,21 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 		_healthReplenishAfterMission = nodeHealth["replenishAfterMission"].as<bool>(_healthReplenishAfterMission);
 	}
 
+	if (const YAML::Node &nodeLoyalty = doc["loyaltySettings"])
+	{
+		_coefBattlescape = nodeLoyalty["coefBattlescape"].as<int>(_coefBattlescape);
+		_coefGeoscape = nodeLoyalty["coefGeoscape"].as<int>(_coefGeoscape);
+		_coefDogfight = nodeLoyalty["coefDogfight"].as<int>(_coefDogfight);
+		_coefResearch = nodeLoyalty["coefResearch"].as<int>(_coefResearch);
+		_coefAlienMission = nodeLoyalty["coefAlienMission"].as<int>(_coefAlienMission);
+		_coefUfo = nodeLoyalty["coefUfo"].as<int>(_coefUfo);
+		_coefAlienBase = nodeLoyalty["coefAlienBase"].as<int>(_coefAlienBase);
+		_noFundsPenalty = nodeLoyalty["noFundsPenalty"].as<int>(_noFundsPenalty);
+		_noFundsValue = nodeLoyalty["noFundsValue"].as<int>(_noFundsValue);
+		_performanceCap = nodeLoyalty["performanceCap"].as<int>(_performanceCap);
+		_performanceFactor = nodeLoyalty["performanceFactor"].as<int>(_performanceFactor);
+	}
+
 
 	if (const YAML::Node &nodeGameOver = doc["gameOver"])
 	{
@@ -2721,6 +2736,7 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	_pediaReplaceCraftFuelWithRangeType = doc["pediaReplaceCraftFuelWithRangeType"].as<int>(_pediaReplaceCraftFuelWithRangeType);
 	_missionRatings = doc["missionRatings"].as<std::map<int, std::string> >(_missionRatings);
 	_monthlyRatings = doc["monthlyRatings"].as<std::map<int, std::string> >(_monthlyRatings);
+	_loyaltyRatings = doc["loyaltyRatings"].as<std::map<int, std::string> >(_loyaltyRatings);
 	loadUnorderedNamesToNames("mod", _fixedUserOptions, doc["fixedUserOptions"]);
 	loadUnorderedNamesToNames("mod", _recommendedUserOptions, doc["recommendedUserOptions"]);
 	loadUnorderedNames("mod", _hiddenMovementBackgrounds, doc["hiddenMovementBackgrounds"]);
@@ -4544,6 +4560,12 @@ const std::map<int, std::string> *Mod::getMonthlyRatings() const
 {
 	return &_monthlyRatings;
 }
+
+const std::map<int, std::string> *Mod::getLoyaltyRatings() const
+{
+	return &_loyaltyRatings;
+}
+
 
 const std::vector<std::string> &Mod::getHiddenMovementBackgrounds() const
 {

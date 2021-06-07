@@ -39,6 +39,7 @@
 #include "../Savegame/Soldier.h"
 #include "../Savegame/Transfer.h"
 #include "../Ufopaedia/Ufopaedia.h"
+#include "../SCP/MasterMind.h"
 
 namespace OpenXcom
 {
@@ -122,24 +123,31 @@ void GeoscapeEventState::eventLogic()
 	}
 
 	// 1. give/take score points
-	if (regionRule)
+	int points = rule.getPoints();
+	if (points != 0)
 	{
-		for (auto region : *_game->getSavedGame()->getRegions())
+		if (regionRule)
 		{
-			if (region->getRules() == regionRule)
+			for (auto region : *_game->getSavedGame()->getRegions())
 			{
-				region->addActivityXcom(rule.getPoints());
-				break;
+				if (region->getRules() == regionRule)
+				{
+					region->addActivityXcom(points);
+					break;
+				}
 			}
 		}
-	}
-	else
-	{
-		save->addResearchScore(rule.getPoints());
+		else
+		{
+			save->addResearchScore(points);
+		}
+		_game->getMasterMind()->updateLoyalty(points, XCOM_GEOSCAPE);
 	}
 
-	// 2. give/take funds
+	// 2. give/take funds and loyalty
 	save->setFunds(save->getFunds() + rule.getFunds());
+
+	save->setLoyalty(save->getLoyalty() + rule.getLoyalty());
 
 	// 3. spawn/transfer persons (soldiers, engineers, scientists, ...)
 	const std::string& spawnedPersonType = rule.getSpawnedPersonType();
@@ -178,7 +186,7 @@ void GeoscapeEventState::eventLogic()
 		}
 	}
 
-	// 3. spawn/transfer item into the HQ
+	// 4. spawn/transfer item into the HQ
 	std::map<std::string, int> itemsToTransfer;
 
 	for (auto &pair : rule.getEveryMultiItemList())
@@ -225,7 +233,7 @@ void GeoscapeEventState::eventLogic()
 		hq->getTransfers()->push_back(t);
 	}
 
-	// 4. give bonus research
+	// 5. give bonus research
 	std::vector<const RuleResearch*> possibilities;
 
 	for (auto rName : rule.getResearchList())

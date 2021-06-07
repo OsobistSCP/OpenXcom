@@ -145,7 +145,8 @@ bool haveReserchVector(const std::vector<const RuleResearch*> &vec,  const std::
  */
 SavedGame::SavedGame() : _difficulty(DIFF_BEGINNER), _end(END_NONE), _ironman(false), _globeLon(0.0),
 						 _globeLat(0.0), _globeZoom(0), _battleGame(0), _debug(false),
-						 _warned(false), _monthsPassed(-1), _selectedBase(0), _autosales(), _disableSoldierEquipment(false), _alienContainmentChecked(false)
+						 _warned(false), _monthsPassed(-1), _selectedBase(0), _autosales(), _disableSoldierEquipment(false), _alienContainmentChecked(false),
+						 _loyalty(0), _lastMonthsLoyalty(0)
 {
 	_time = new GameTime(6, 1, 1, 1999, 12, 0, 0);
 	_alienStrategy = new AlienStrategy();
@@ -434,6 +435,8 @@ void SavedGame::load(const std::string &filename, Mod *mod, Language *lang)
 	_graphRegionToggles = doc["graphRegionToggles"].as<std::string>(_graphRegionToggles);
 	_graphCountryToggles = doc["graphCountryToggles"].as<std::string>(_graphCountryToggles);
 	_graphFinanceToggles = doc["graphFinanceToggles"].as<std::string>(_graphFinanceToggles);
+	_loyalty = doc["loyalty"].as<int>(_loyalty);
+	_lastMonthsLoyalty = doc["lastMonthsLoyalty"].as<int>(_lastMonthsLoyalty);
 	_funds = doc["funds"].as< std::vector<int64_t> >(_funds);
 	_maintenance = doc["maintenance"].as< std::vector<int64_t> >(_maintenance);
 	_userNotes = doc["userNotes"].as< std::vector<std::string> >(_userNotes);
@@ -838,6 +841,8 @@ void SavedGame::save(const std::string &filename, Mod *mod) const
 	node["graphCountryToggles"] = _graphCountryToggles;
 	node["graphFinanceToggles"] = _graphFinanceToggles;
 	node["rng"] = RNG::getSeed();
+	node["loyalty"] = _loyalty;
+	node["lastMonthsLoyalty"] = _lastMonthsLoyalty;
 	node["funds"] = _funds;
 	node["maintenance"] = _maintenance;
 	node["userNotes"] = _userNotes;
@@ -3092,6 +3097,18 @@ void randomChanceScript(RNG::RandomState* rs, int& val)
 	}
 }
 
+void getLoyaltyScript(SavedGame *sg, int &val)
+{
+	if (sg)
+	{
+		val = sg->getLoyalty();
+	}
+	else
+	{
+		val = 0;
+	}
+}
+
 void randomRangeScript(RNG::RandomState* rs, int& val, int min, int max)
 {
 	if (rs && max >= min)
@@ -3266,6 +3283,7 @@ void SavedGame::ScriptRegister(ScriptParserBase* parser)
 
 	sgg.add<&getTimeScript>("getTime", "Get global time that is Greenwich Mean Time");
 	sgg.add<&getRandomScript>("getRandomState");
+	sgg.add<&getLoyaltyScript>("getLoyalty");
 
 	sgg.add<&isResearchedScript>("isResearched");
 
