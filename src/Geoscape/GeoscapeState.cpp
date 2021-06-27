@@ -1994,6 +1994,213 @@ void GeoscapeState::time30Minutes()
  */
 void GeoscapeState::time1Hour()
 {
+	SavedGame *saveGame = _game->getSavedGame();
+	Mod *mod = _game->getMod();
+	//Handle 1-hour research process
+	for (Base *base : *_game->getSavedGame()->getBases())
+	{
+		// Handle science project
+		// 1. gather finished research
+		std::vector<ResearchProject *> finished;
+		for (ResearchProject *project : base->getResearch())
+		{
+			if (project->step())
+			{
+				finished.push_back(project);
+			}
+		}
+		// 2. remember available research before adding new finished research
+		std::vector<RuleResearch *> before;
+		if (!finished.empty())
+		{
+			saveGame->getAvailableResearchProjects(before, mod, base);
+		}
+		// 3. add finished research, including lookups and getonefrees (up to 4x)
+		for (ResearchProject *project : finished)
+		{
+			const RuleResearch *bonus = 0;
+			const RuleResearch *research = project->getRules();
+
+			// 3a. remove finished research from the base where it was researched
+			base->removeResearch(project);
+			project = nullptr;
+
+			// 3b. handle interrogation and spawned items/events
+			if (Options::retainCorpses && research->destroyItem())
+			{
+				auto ruleUnit = mod->getUnit(research->getName(), false);
+				if (ruleUnit)
+				{
+					auto ruleCorpse = ruleUnit->getArmor()->getCorpseGeoscape();
+					if (ruleCorpse && ruleCorpse->isRecoverable() && ruleCorpse->isCorpseRecoverable())
+					{
+						base->getStorageItems()->addItem(ruleCorpse->getType());
+					}
+				}
+			}
+			RuleItem *spawnedItem = _game->getMod()->getItem(research->getSpawnedItem());
+			if (spawnedItem)
+			{
+				Transfer *t = new Transfer(1);
+				t->setItems(research->getSpawnedItem());
+				base->getTransfers()->push_back(t);
+			}
+			RuleEvent *spawnedEventRule = _game->getMod()->getEvent(research->getSpawnedEvent());
+			if (spawnedEventRule)
+			{
+				GeoscapeEvent *newEvent = new GeoscapeEvent(*spawnedEventRule);
+				int minutes = (spawnedEventRule->getTimer() + (RNG::generate(0, spawnedEventRule->getTimerRandom()))) / 30 * 30;
+				if (minutes < 60)
+					minutes = 60; // just in case
+				newEvent->setSpawnCountdown(minutes);
+				saveGame->getGeoscapeEvents().push_back(newEvent);
+
+				// remember that it has been generated
+				saveGame->addGeneratedEvent(spawnedEventRule);
+			}
+			// 3c. handle getonefrees (topic+lookup)
+			if ((bonus = saveGame->selectGetOneFree(research)))
+			{
+				saveGame->addFinishedResearch(bonus, mod, base);
+				if (!bonus->getLookup().empty())
+				{
+					saveGame->addFinishedResearch(mod->getResearch(bonus->getLookup(), true), mod, base);
+				}
+			}
+			// 3d. determine and remember if the ufopedia article should pop up again or not
+			// Note: because different topics may lead to the same lookup
+			const RuleResearch *newResearch = research;
+			std::string name = research->getLookup().empty() ? research->getName() : research->getLookup();
+			if (saveGame->isResearched(name, false))
+			{
+				newResearch = 0;
+			}
+			// 3e. handle core research (topic+lookup)
+			saveGame->addFinishedResearch(research, mod, base);
+			if (!research->getLookup().empty())
+			{
+				saveGame->addFinishedResearch(mod->getResearch(research->getLookup(), true), mod, base);
+			}
+			// 3e. handle cutscene
+			if (!research->getCutscene().empty())
+			{
+				popup(new CutsceneState(research->getCutscene()));
+				if (saveGame->getEnding() == END_NONE)
+				{
+					const RuleVideo *videoRule = _game->getMod()->getVideo(research->getCutscene(), true);
+					if (videoRule->getWinGame())
+						saveGame->setEnding(END_WIN);
+					if (videoRule->getLoseGame())
+						saveGame->setEnding(END_LOSE);
+				}
+			}
+			if (bonus && !bonus->getCutscene().empty())
+			{
+				popup(new CutsceneState(bonus->getCutscene()));
+				if (saveGame->getEnding() == END_NONE)
+				{
+					const RuleVideo *videoRule = _game->getMod()->getVideo(bonus->getCutscene(), true);
+					if (videoRule->getWinGame())
+						saveGame->setEnding(END_WIN);
+					if (videoRule->getLoseGame())
+						saveGame->setEnding(END_LOSE);
+				}
+			}
+			// 3e. handle research complete popup + ufopedia article popups (topic+bonus)
+			popup(new ResearchCompleteState(newResearch, bonus, research));
+			// 3f. reset timer
+			timerReset();
+			// 3g. warning if weapon is researched before its clip
+			if (newResearch)
+			{
+				RuleItem *item = mod->getItem(newResearch->getName());
+				if (item && item->getBattleType() == BT_FIREARM && !item->getPrimaryCompatibleAmmo()->empty())
+				{
+					RuleManufacture *man = mod->getManufacture(item->getType());
+					if (man && !man->getRequirements().empty())
+					{
+						const auto &req = man->getRequirements();
+						const RuleItem *ammo = item->getPrimaryCompatibleAmmo()->front();
+						if (std::find_if(req.begin(), req.end(), [&](const RuleResearch *r) { return r->getName() == ammo->getType(); }) != req.end() && !saveGame->isResearched(req, true))
+						{
+							popup(new ResearchRequiredState(item));
+						}
+					}
+				}
+			}
+			// 3h. inform about new possible research
+			std::vector<RuleResearch *> after;
+			saveGame->getAvailableResearchProjects(after, mod, base);
+			std::vector<RuleResearch *> newPossibleResearch;
+			saveGame->getNewlyAvailableResearchProjects(before, after, newPossibleResearch);
+			popup(new NewPossibleResearchState(base, newPossibleResearch));
+			// 3i. inform about new possible manufacture, purchase, craft and facilities
+			std::vector<RuleManufacture *> newPossibleManufacture;
+			saveGame->getDependableManufacture(newPossibleManufacture, research, mod, base);
+			if (bonus)
+			{
+				saveGame->getDependableManufacture(newPossibleManufacture, bonus, mod, base);
+			}
+			if (!newPossibleManufacture.empty())
+			{
+				popup(new NewPossibleManufactureState(base, newPossibleManufacture));
+			}
+			std::vector<RuleItem *> newPossiblePurchase;
+			_game->getSavedGame()->getDependablePurchase(newPossiblePurchase, research, _game->getMod());
+			if (bonus)
+			{
+				_game->getSavedGame()->getDependablePurchase(newPossiblePurchase, bonus, _game->getMod());
+			}
+			if (!newPossiblePurchase.empty())
+			{
+				popup(new NewPossiblePurchaseState(base, newPossiblePurchase));
+			}
+			std::vector<RuleCraft *> newPossibleCraft;
+			_game->getSavedGame()->getDependableCraft(newPossibleCraft, research, _game->getMod());
+			if (bonus)
+			{
+				_game->getSavedGame()->getDependableCraft(newPossibleCraft, bonus, _game->getMod());
+			}
+			if (!newPossibleCraft.empty())
+			{
+				popup(new NewPossibleCraftState(base, newPossibleCraft));
+			}
+			std::vector<RuleBaseFacility *> newPossibleFacilities;
+			_game->getSavedGame()->getDependableFacilities(newPossibleFacilities, research, _game->getMod());
+			if (bonus)
+			{
+				_game->getSavedGame()->getDependableFacilities(newPossibleFacilities, bonus, _game->getMod());
+			}
+			if (!newPossibleFacilities.empty())
+			{
+				popup(new NewPossibleFacilityState(base, _globe, newPossibleFacilities));
+			}
+			// 3j. now iterate through all the bases and remove this project from their labs (unless it can still yield more stuff!)
+			for (Base *otherBase : *saveGame->getBases())
+			{
+				for (ResearchProject *otherProject : otherBase->getResearch())
+				{
+					if (research->getName() == otherProject->getRules()->getName())
+					{
+						if (saveGame->hasUndiscoveredGetOneFree(research, true))
+						{
+							// This research topic still has some more undiscovered non-disabled and *AVAILABLE* "getOneFree" topics, keep it!
+						}
+						else if (saveGame->hasUndiscoveredProtectedUnlock(research, mod))
+						{
+							// This research topic still has one or more undiscovered non-disabled "protected unlocks", keep it!
+						}
+						else
+						{
+							// This topic can't give you anything else anymore, remove it!
+							otherBase->removeResearch(otherProject);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
 	// Handle craft maintenance
 	for (std::vector<Base*>::iterator i = _game->getSavedGame()->getBases()->begin(); i != _game->getSavedGame()->getBases()->end(); ++i)
 	{
@@ -2243,203 +2450,6 @@ void GeoscapeState::time1Day()
 			else
 			{
 				popup(new ProductionCompleteState(base, tr(f.first->getType()), this, PROGRESS_CONSTRUCTION));
-			}
-		}
-
-		// Handle science project
-		// 1. gather finished research
-		std::vector<ResearchProject*> finished;
-		for (ResearchProject *project : base->getResearch())
-		{
-			if (project->step())
-			{
-				finished.push_back(project);
-			}
-		}
-		// 2. remember available research before adding new finished research
-		std::vector<RuleResearch*> before;
-		if (!finished.empty())
-		{
-			saveGame->getAvailableResearchProjects(before, mod, base);
-		}
-		// 3. add finished research, including lookups and getonefrees (up to 4x)
-		for (ResearchProject *project : finished)
-		{
-			const RuleResearch *bonus = 0;
-			const RuleResearch *research = project->getRules();
-
-			// 3a. remove finished research from the base where it was researched
-			base->removeResearch(project);
-			project = nullptr;
-
-			// 3b. handle interrogation and spawned items/events
-			if (Options::retainCorpses && research->destroyItem())
-			{
-				auto ruleUnit = mod->getUnit(research->getName(), false);
-				if (ruleUnit)
-				{
-					auto ruleCorpse = ruleUnit->getArmor()->getCorpseGeoscape();
-					if (ruleCorpse && ruleCorpse->isRecoverable() && ruleCorpse->isCorpseRecoverable())
-					{
-						base->getStorageItems()->addItem(ruleCorpse->getType());
-					}
-				}
-			}
-			RuleItem *spawnedItem = _game->getMod()->getItem(research->getSpawnedItem());
-			if (spawnedItem)
-			{
-				Transfer *t = new Transfer(1);
-				t->setItems(research->getSpawnedItem());
-				base->getTransfers()->push_back(t);
-			}
-			RuleEvent* spawnedEventRule = _game->getMod()->getEvent(research->getSpawnedEvent());
-			if (spawnedEventRule)
-			{
-				GeoscapeEvent* newEvent = new GeoscapeEvent(*spawnedEventRule);
-				int minutes = (spawnedEventRule->getTimer() + (RNG::generate(0, spawnedEventRule->getTimerRandom()))) / 30 * 30;
-				if (minutes < 60) minutes = 60; // just in case
-				newEvent->setSpawnCountdown(minutes);
-				saveGame->getGeoscapeEvents().push_back(newEvent);
-
-				// remember that it has been generated
-				saveGame->addGeneratedEvent(spawnedEventRule);
-			}
-			// 3c. handle getonefrees (topic+lookup)
-			if ((bonus = saveGame->selectGetOneFree(research)))
-			{
-				saveGame->addFinishedResearch(bonus, mod, base);
-				if (!bonus->getLookup().empty())
-				{
-					saveGame->addFinishedResearch(mod->getResearch(bonus->getLookup(), true), mod, base);
-				}
-			}
-			// 3d. determine and remember if the ufopedia article should pop up again or not
-			// Note: because different topics may lead to the same lookup
-			const RuleResearch *newResearch = research;
-			std::string name = research->getLookup().empty() ? research->getName() : research->getLookup();
-			if (saveGame->isResearched(name, false))
-			{
-				newResearch = 0;
-			}
-			// 3e. handle core research (topic+lookup)
-			saveGame->addFinishedResearch(research, mod, base);
-			if (!research->getLookup().empty())
-			{
-				saveGame->addFinishedResearch(mod->getResearch(research->getLookup(), true), mod, base);
-			}
-			// 3e. handle cutscene
-			if (!research->getCutscene().empty())
-			{
-				popup(new CutsceneState(research->getCutscene()));
-				if (saveGame->getEnding() == END_NONE)
-				{
-					const RuleVideo* videoRule = _game->getMod()->getVideo(research->getCutscene(), true);
-					if (videoRule->getWinGame()) saveGame->setEnding(END_WIN);
-					if (videoRule->getLoseGame()) saveGame->setEnding(END_LOSE);
-				}
-			}
-			if (bonus && !bonus->getCutscene().empty())
-			{
-				popup(new CutsceneState(bonus->getCutscene()));
-				if (saveGame->getEnding() == END_NONE)
-				{
-					const RuleVideo* videoRule = _game->getMod()->getVideo(bonus->getCutscene(), true);
-					if (videoRule->getWinGame()) saveGame->setEnding(END_WIN);
-					if (videoRule->getLoseGame()) saveGame->setEnding(END_LOSE);
-				}
-			}
-			// 3e. handle research complete popup + ufopedia article popups (topic+bonus)
-			popup(new ResearchCompleteState(newResearch, bonus, research));
-			// 3f. reset timer
-			timerReset();
-			// 3g. warning if weapon is researched before its clip
-			if (newResearch)
-			{
-				RuleItem *item = mod->getItem(newResearch->getName());
-				if (item && item->getBattleType() == BT_FIREARM && !item->getPrimaryCompatibleAmmo()->empty())
-				{
-					RuleManufacture *man = mod->getManufacture(item->getType());
-					if (man && !man->getRequirements().empty())
-					{
-						const auto &req = man->getRequirements();
-						const RuleItem *ammo = item->getPrimaryCompatibleAmmo()->front();
-						if (std::find_if(req.begin(), req.end(), [&](const RuleResearch* r){ return r->getName() == ammo->getType(); }) != req.end() && !saveGame->isResearched(req, true))
-						{
-							popup(new ResearchRequiredState(item));
-						}
-					}
-				}
-			}
-			// 3h. inform about new possible research
-			std::vector<RuleResearch *> after;
-			saveGame->getAvailableResearchProjects(after, mod, base);
-			std::vector<RuleResearch *> newPossibleResearch;
-			saveGame->getNewlyAvailableResearchProjects(before, after, newPossibleResearch);
-			popup(new NewPossibleResearchState(base, newPossibleResearch));
-			// 3i. inform about new possible manufacture, purchase, craft and facilities
-			std::vector<RuleManufacture *> newPossibleManufacture;
-			saveGame->getDependableManufacture(newPossibleManufacture, research, mod, base);
-			if (bonus)
-			{
-				saveGame->getDependableManufacture(newPossibleManufacture, bonus, mod, base);
-			}
-			if (!newPossibleManufacture.empty())
-			{
-				popup(new NewPossibleManufactureState(base, newPossibleManufacture));
-			}
-			std::vector<RuleItem *> newPossiblePurchase;
-			_game->getSavedGame()->getDependablePurchase(newPossiblePurchase, research, _game->getMod());
-			if (bonus)
-			{
-				_game->getSavedGame()->getDependablePurchase(newPossiblePurchase, bonus, _game->getMod());
-			}
-			if (!newPossiblePurchase.empty())
-			{
-				popup(new NewPossiblePurchaseState(base, newPossiblePurchase));
-			}
-			std::vector<RuleCraft *> newPossibleCraft;
-			_game->getSavedGame()->getDependableCraft(newPossibleCraft, research, _game->getMod());
-			if (bonus)
-			{
-				_game->getSavedGame()->getDependableCraft(newPossibleCraft, bonus, _game->getMod());
-			}
-			if (!newPossibleCraft.empty())
-			{
-				popup(new NewPossibleCraftState(base, newPossibleCraft));
-			}
-			std::vector<RuleBaseFacility *> newPossibleFacilities;
-			_game->getSavedGame()->getDependableFacilities(newPossibleFacilities, research, _game->getMod());
-			if (bonus)
-			{
-				_game->getSavedGame()->getDependableFacilities(newPossibleFacilities, bonus, _game->getMod());
-			}
-			if (!newPossibleFacilities.empty())
-			{
-				popup(new NewPossibleFacilityState(base, _globe, newPossibleFacilities));
-			}
-			// 3j. now iterate through all the bases and remove this project from their labs (unless it can still yield more stuff!)
-			for (Base *otherBase : *saveGame->getBases())
-			{
-				for (ResearchProject* otherProject : otherBase->getResearch())
-				{
-					if (research->getName() == otherProject->getRules()->getName())
-					{
-						if (saveGame->hasUndiscoveredGetOneFree(research, true))
-						{
-							// This research topic still has some more undiscovered non-disabled and *AVAILABLE* "getOneFree" topics, keep it!
-						}
-						else if (saveGame->hasUndiscoveredProtectedUnlock(research, mod))
-						{
-							// This research topic still has one or more undiscovered non-disabled "protected unlocks", keep it!
-						}
-						else
-						{
-							// This topic can't give you anything else anymore, remove it!
-							otherBase->removeResearch(otherProject);
-							break;
-						}
-					}
-				}
 			}
 		}
 

@@ -226,6 +226,14 @@ void BasescapeState::init()
 			_btnNewBase->setVisible(false);
 		}
 	}
+	if (!_game->getMod()->getPurchaseUnlockResearch().empty())
+	{
+		bool PurchaseUnlocked = _game->getSavedGame()->isResearched(_game->getMod()->getPurchaseUnlockResearch(), true);
+		if (!PurchaseUnlocked)
+		{
+			_btnPurchase->setVisible(false);
+		}
+	}
 }
 
 /**

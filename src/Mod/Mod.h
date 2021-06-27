@@ -253,7 +253,7 @@ private:
 	int _defeatScore, _defeatFunds;
 	bool _difficultyDemigod;
 	std::pair<std::string, int> _alienFuel;
-	std::string _fontName, _finalResearch, _psiUnlockResearch, _fakeUnderwaterBaseUnlockResearch, _newBaseUnlockResearch;
+	std::string _fontName, _finalResearch, _psiUnlockResearch, _fakeUnderwaterBaseUnlockResearch, _newBaseUnlockResearch, _PurchaseUnlockResearch;
 	std::string _hireScientistsUnlockResearch, _hireEngineersUnlockResearch;
 
 	std::string _destroyedFacility;
@@ -846,6 +846,8 @@ public:
 	const std::string &getHireScientistsUnlockResearch() const { return _hireScientistsUnlockResearch; }
 	/// Gets the research topic required for hiring new engineers.
 	const std::string &getHireEngineersUnlockResearch() const { return _hireEngineersUnlockResearch; }
+	/// Gets the research topic required for purchasing stuff.
+	const std::string &getPurchaseUnlockResearch() const { return _PurchaseUnlockResearch; }
 
 	/// Gets the threshold for defining a glancing hit on a ufo during interception
 	int getUfoGlancingHitThreshold() const { return _ufoGlancingHitThreshold; }
