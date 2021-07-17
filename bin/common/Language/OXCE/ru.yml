@@ -240,6 +240,8 @@ ru:
   STR_REMEMBER_DISABLED_CRAFT_WEAPONS_DESC: "Отключенные во время боя вооружения ТС будут оставаться отключенными. Они также не будут перезаряжаться на базе."
   STR_OFF_CENTRE_SHOOTING: "Стрельба со смещением"
   STR_OFF_CENTRE_SHOOTING_DESC: "Бойцы будут вести огонь, немного сдвигая угол стрельбы при отсутствии линии огня."
+  STR_KEEP_CRAFT_COMMANDS_AFTER_DOGFIGHT: "Сохранять приказы ТС после боя"
+  STR_KEEP_CRAFT_COMMANDS_AFTER_DOGFIGHT_DESC: "ТС вернутся к выполнению приказа после воздушного боя с НЛО/Охотником. Обычно ТС после боя возвращаются на базу."
   STR_GRAPHS_ZOOM_IN: "Увеличение (графиков)"
   STR_GRAPHS_ZOOM_OUT: "Уменьшение (графиков)"
   STR_MARK_ALL_AS_SEEN: "Отметить все как просмотренное"
